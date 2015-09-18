@@ -35,7 +35,7 @@ CUDA_ARCH := -gencode arch=compute_20,code=sm_20 \
 # atlas for ATLAS (default)
 # mkl for MKL
 # open for OpenBlas
-BLAS := atlas
+BLAS := open
 # Custom (MKL/ATLAS/OpenBLAS) include and lib directories.
 # Leave commented to accept the defaults for your choice of BLAS
 # (which should work)!
@@ -96,3 +96,6 @@ TEST_GPUID := 0
 
 # enable pretty build (comment to see full commands)
 Q ?= @
+
+# Uncomment if use OpenCV-3.0
+# OPENCV3 := 1
