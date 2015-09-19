@@ -265,7 +265,8 @@ void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
                                        Blob<Dtype>* transformed_blob) {
-  const int crop_size = param_.crop_size();
+return AugmentTransform(cv_img,transformed_blob);  
+const int crop_size = param_.crop_size();
   const int img_channels = cv_img.channels();
   const int img_height = cv_img.rows;
   const int img_width = cv_img.cols;
@@ -379,8 +380,6 @@ void DataTransformer<Dtype>::AugmentTransform(const cv::Mat& cv_img,
   const int num = transformed_blob->num();
 
   CHECK_EQ(channels, img_channels);
-  CHECK_LE(height, img_height);
-  CHECK_LE(width, img_width);
   CHECK_GE(num, 1);
 
   CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
@@ -674,7 +673,7 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum) {
       cv_img = DecodeDatumToCVMatNative(datum);
     }
     // InferBlobShape using the cv::image.
-    return InferBlobShape(cv_img);
+    return AugmentInferBlobShape(cv_img);
 #else
     LOG(FATAL) << "Encoded datum requires OpenCV; compile with USE_OPENCV.";
 #endif  // USE_OPENCV
@@ -763,7 +762,7 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(
   const int num = mat_vector.size();
   CHECK_GT(num, 0) << "There is no cv_img to in the vector";
   // Use first cv_img in the vector to InferBlobShape.
-  vector<int> shape = InferBlobShape(mat_vector[0]);
+  vector<int> shape = AugmentInferBlobShape(mat_vector[0]);
   // Adjust num to the size of the vector.
   shape[0] = num;
   return shape;
