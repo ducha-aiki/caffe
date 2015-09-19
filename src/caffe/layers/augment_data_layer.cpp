@@ -109,6 +109,6 @@ void AugmentDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 }
 
 INSTANTIATE_CLASS(AugmentDataLayer);
-REGISTER_LAYER_CLASS(Data);
+REGISTER_LAYER_CLASS(AugmentData);
 
 }  // namespace caffe
