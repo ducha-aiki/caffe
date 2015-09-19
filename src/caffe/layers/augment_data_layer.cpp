@@ -27,7 +27,7 @@ AugmentDataLayer<Dtype>::~AugmentDataLayer() {
 }
 
 template <typename Dtype>
-void AugmentDataLayer<Dtype>::AugmentDataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void AugmentDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const int batch_size = this->layer_param_.data_param().batch_size();
   // Read a data point, and use it to initialize the top blob.

@@ -93,7 +93,7 @@ class AugmentDataLayer : public BasePrefetchingDataLayer<Dtype> {
  public:
   explicit AugmentDataLayer(const LayerParameter& param);
   virtual ~AugmentDataLayer();
-  virtual void AugmentDataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   // AugmentDataLayer uses DataReader instead for sharing for parallelism
   virtual inline bool ShareInParallel() const { return false; }
