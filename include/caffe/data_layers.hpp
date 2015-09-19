@@ -89,6 +89,25 @@ class BasePrefetchingDataLayer :
 };
 
 template <typename Dtype>
+class AugmentDataLayer : public BasePrefetchingDataLayer<Dtype> {
+ public:
+  explicit AugmentDataLayer(const LayerParameter& param);
+  virtual ~AugmentDataLayer();
+  virtual void AugmentDataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  // AugmentDataLayer uses DataReader instead for sharing for parallelism
+  virtual inline bool ShareInParallel() const { return false; }
+  virtual inline const char* type() const { return "AugmentData"; }
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  virtual inline int MaxTopBlobs() const { return 2; }
+
+ protected:
+  virtual void load_batch(Batch<Dtype>* batch);
+
+  DataReader reader_;
+};
+template <typename Dtype>
 class DataLayer : public BasePrefetchingDataLayer<Dtype> {
  public:
   explicit DataLayer(const LayerParameter& param);

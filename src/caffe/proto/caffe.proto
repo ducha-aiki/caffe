@@ -387,7 +387,6 @@ message LayerParameter {
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
 }
-
 // Message that stores parameters used to apply transformation
 // to the data layer's data
 message TransformationParameter {
@@ -399,7 +398,12 @@ message TransformationParameter {
   optional bool mirror = 2 [default = false];
   // Specify if we would like to randomly crop an image.
   optional uint32 crop_size = 3 [default = 0];
+
+  optional uint32 crop_h = 11 [default = 0];
+  optional uint32 crop_w = 12 [default = 0];
+
   // mean_file and mean_value cannot be specified at the same time
+  optional bool random_crop_on_test = 10 [default = false];
   optional string mean_file = 4;
   // if specified can be repeated once (would substract it from all the channels)
   // or can be repeated the same number of times as channels
@@ -409,8 +413,97 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+  //Resize policy
+  repeated ResizeParameter resize_param = 8;
+  //Noise policy
+  repeated NoiseParameter noise_param = 9;
+  // Specify if we want to randomly mirror data around X axis.
+  optional bool vertical_mirror = 13 [default = false];
+  //Random rotation by 0-90-180-270 degrees
+  optional bool random_90_deg_rot = 14 [default = false];
+
 }
 
+// Message that stores parameters used by data transformer for transformation policy
+message ResizeParameter {
+
+//Probability of using this resize policy
+optional float prob = 1 [default = 0];
+
+enum Resize_mode {
+WARP = 1;
+FIT_SMALL_SIZE = 2;
+FIT_LARGE_SIZE_AND_PAD = 3;
+}
+optional Resize_mode resize_mode = 2 [default = WARP];
+optional uint32 height = 3 [default = 0];
+optional uint32 width = 4 [default = 0];
+
+enum Pad_mode {
+CONSTANT = 1;
+MIRRORED = 2;
+REPEAT_NEAREST = 3;
+}
+// Padding mode for BE_SMALL_SIZE_AND_PAD mode and object centering
+optional Pad_mode pad_mode = 5 [default = CONSTANT];
+// if specified can be repeated once (would fill all the channels)
+// or can be repeated the same number of times as channels
+// (would use it them to the corresponding channel)
+repeated float pad_value = 6;
+
+enum Interp_mode { //Same as in OpenCV
+LINEAR = 1;
+AREA = 2;
+NEAREST = 3;
+CUBIC = 4;
+LANCZOS4 = 5;
+}
+//interpolation for for resizing
+optional Interp_mode interp_mode = 7 [default = LINEAR];
+
+// Extracts and centers object if it lays on monotonic background. First operation
+optional bool center_object = 8 [default = false];
+
+// Random rotation. Second operation after centering object
+optional float max_angle = 9 [default = 0];
+}
+
+message SaltPepperParameter {
+//Percentage of pixels
+optional float fraction = 1 [default = 0];
+repeated float value = 2;
+}
+
+// Message that stores parameters used by data transformer for transformation
+// policy
+message NoiseParameter {
+
+//Probability of using this resize policy
+optional float prob = 1 [default = 0];
+// Histogram equalized
+optional bool hist_eq = 2 [default = false];
+// Color inversion
+optional bool inverse = 3 [default = false];
+// Grayscale
+optional bool decolorize = 4 [default = false];
+// Gaussian blur
+optional bool gauss_blur = 5 [default = false];
+
+// JPEG compression quality (-1 = no compression)
+optional float jpeg = 6 [default = -1];
+
+// Posterization
+optional bool posterize = 7 [default = false];
+
+// Erosion
+optional bool erode = 8 [default = false];
+// Salt-and-pepper noise
+optional bool saltpepper = 9 [default = false];
+
+optional SaltPepperParameter saltpepper_param = 10;
+// Local gistogram equalization
+optional bool clahe = 11 [default = false];
+}
 // Message that stores parameters shared by loss layers
 message LossParameter {
   // If specified, ignore instances with the given label.

@@ -36,7 +36,10 @@ class DataTransformer {
    *    set_cpu_data() is used. See data_layer.cpp for an example.
    */
   void Transform(const Datum& datum, Blob<Dtype>* transformed_blob);
-
+  void AugmentTransform(const Datum& datum,
+                Blob<Dtype>* transformed_blob){
+			  return Transform(datum,transformed_blob);
+			};
   /**
    * @brief Applies the transformation defined in the data layer's
    * transform_param block to a vector of Datum.
@@ -49,6 +52,10 @@ class DataTransformer {
    */
   void Transform(const vector<Datum> & datum_vector,
                 Blob<Dtype>* transformed_blob);
+  void AugmentTransform(const vector<Datum> & datum_vector,
+                Blob<Dtype>* transformed_blob){
+			  return Transform(datum_vector,transformed_blob);
+			};
 
 #ifdef USE_OPENCV
   /**
@@ -63,7 +70,10 @@ class DataTransformer {
    */
   void Transform(const vector<cv::Mat> & mat_vector,
                 Blob<Dtype>* transformed_blob);
-
+  void AugmentTransform(const vector<cv::Mat> & mat_vector,
+			Blob<Dtype>* transformed_blob) {
+			  return Transform(mat_vector,transformed_blob);
+			};
   /**
    * @brief Applies the transformation defined in the data layer's
    * transform_param block to a cv::Mat
@@ -75,6 +85,7 @@ class DataTransformer {
    *    set_cpu_data() is used. See image_data_layer.cpp for an example.
    */
   void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
+  void AugmentTransform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
 #endif  // USE_OPENCV
 
   /**
@@ -89,7 +100,7 @@ class DataTransformer {
    *    input blob. It can be part of top blob's data.
    */
   void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
-
+  void AugmentTransform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
@@ -98,6 +109,10 @@ class DataTransformer {
    *    Datum containing the data to be transformed.
    */
   vector<int> InferBlobShape(const Datum& datum);
+  vector<int> AugmentInferBlobShape(const Datum& datum){
+    return InferBlobShape(datum);
+  };
+  
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
@@ -107,6 +122,9 @@ class DataTransformer {
    *    A vector of Datum containing the data to be transformed.
    */
   vector<int> InferBlobShape(const vector<Datum> & datum_vector);
+    vector<int> AugmentInferBlobShape(const vector<Datum>& datum_vector){
+    return InferBlobShape(datum_vector);
+  };
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
@@ -117,6 +135,9 @@ class DataTransformer {
    */
 #ifdef USE_OPENCV
   vector<int> InferBlobShape(const vector<cv::Mat> & mat_vector);
+      vector<int> AugmentInferBlobShape(const vector<cv::Mat> & mat_vector){
+    return InferBlobShape(mat_vector);
+  };
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
@@ -125,6 +146,7 @@ class DataTransformer {
    *    cv::Mat containing the data to be transformed.
    */
   vector<int> InferBlobShape(const cv::Mat& cv_img);
+  vector<int> AugmentInferBlobShape(const cv::Mat& cv_img);
 #endif  // USE_OPENCV
 
  protected:
