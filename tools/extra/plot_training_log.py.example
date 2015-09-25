@@ -8,7 +8,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import matplotlib.legend as lgd
 import matplotlib.markers as mks
-
+import colorsys 
 def get_log_parsing_script():
     dirname = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     return dirname + '/parse_log.sh'
@@ -114,7 +114,8 @@ def plot_chart(chart_type, path_to_png, path_to_log_list):
         x, y = get_field_indecies(x_axis_field, y_axis_field)
         data = load_data(data_file, x, y)
         ## TODO: more systematic color cycle for lines
-        color = [random.random(), random.random(), random.random()]
+        #color = [random.random(), random.random(), random.random()]
+        color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
         label = get_data_label(path_to_log)
         linewidth = 0.75
         ## If there too many datapoints, do not use marker.
