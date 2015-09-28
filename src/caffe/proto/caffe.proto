@@ -350,7 +350,7 @@ message LayerParameter {
   // The default for the engine is set by the ENGINE switch at compile-time.
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
-  optional BNParameter bn_param = 202;
+
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -377,6 +377,7 @@ message LayerParameter {
   optional PythonParameter python_param = 130;
   optional ReductionParameter reduction_param = 136;
   optional ReLUParameter relu_param = 123;
+
   optional ReshapeParameter reshape_param = 133;
   optional SigmoidParameter sigmoid_param = 124;
   optional SoftmaxParameter softmax_param = 125;
@@ -386,7 +387,60 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  
+  optional BNParameter bn_param = 202;
+  optional LocalParameter local_param = 204;
+  optional RReLUParameter rrelu_param = 203;
+  optional TripletLossParameter triplet_loss_param = 205;
+  optional ROIPoolingParameter roi_pooling_param = 206;
 }
+
+message RReLUParameter {
+  // Randomized Leaky Rectified Linear Unit, described in
+  // Bing Xu, Naiyan Wang, Tianqi Chen, Mu Li,
+  // Empirical Evaluation of Rectified Activations in Convolution Network
+  
+  optional float lb = 1 [default = 5.];
+  optional float ub = 2 [default = 10.];
+}
+
+message TripletLossParameter {
+  //margin for negative triplet
+  optional float margin = 1 [default = 1.0];
+}
+
+// Message that stores parameters used by ROIPoolingLayer
+message ROIPoolingParameter {
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pooled_h = 1 [default = 0]; // The pooled output height
+  optional uint32 pooled_w = 2 [default = 0]; // The pooled output width
+  // Multiplicative spatial scale factor to translate ROI coords from their
+  // input scale to the scale used when pooling
+  optional float spatial_scale = 3 [default = 1];
+}
+
+// Message that stores parameters used by BNLayer
+message BNParameter {
+  optional FillerParameter scale_filler = 1; // The filler for the scale
+  optional FillerParameter shift_filler = 2; // The filler for the shift
+  optional float var_eps = 3 [default = 1e-10]; // The epsilon added to variance
+  optional bool moving_average = 4 [default = true]; // whether or not using moving average for inference
+  optional float decay = 5 [default = 0.95]; // The decay factor for moving average
+}
+
+// Message that stores parameters used by LocalLayer
+message LocalParameter {
+  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional uint32 pad = 3 [default = 0]; // The padding size
+  optional uint32 kernel_size = 4; // The kernel size
+  optional uint32 stride = 6 [default = 1]; // The stride
+  optional FillerParameter weight_filler = 7; // The filler for the weight
+  optional FillerParameter bias_filler = 8; // The filler for the bias
+}
+
+
 // Message that stores parameters used to apply transformation
 // to the data layer's data
 message TransformationParameter {
@@ -503,6 +557,12 @@ optional bool saltpepper = 9 [default = false];
 optional SaltPepperParameter saltpepper_param = 10;
 // Local gistogram equalization
 optional bool clahe = 11 [default = false];
+
+// Color space conversion
+optional bool convert_to_hsv = 12 [default = false];
+
+// Color space conversion
+optional bool convert_to_lab = 13 [default = false];
 }
 // Message that stores parameters shared by loss layers
 message LossParameter {
@@ -539,11 +599,6 @@ message ArgMaxParameter {
   optional uint32 top_k = 2 [default = 1];
 }
 
-// Message that stores parameters used by BNLayer
-message BNParameter {
-  optional FillerParameter scale_filler = 1; // The filler for the scale
-  optional FillerParameter shift_filler = 2; // The filler for the shift
-}
 
 message ConcatParameter {
   // The axis along which to concatenate -- may be negative to index from the

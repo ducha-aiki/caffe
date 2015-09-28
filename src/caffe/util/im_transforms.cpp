@@ -386,6 +386,18 @@ namespace caffe {
               * out_img.cols * out_img.rows);
       constantNoise(out_img, noise_pixels_num, noise_values);
     }
+    
+    if (param.convert_to_hsv()) {
+      cv::Mat hsv_image;
+      cv::cvtColor(out_img, hsv_image, CV_BGR2HSV); 
+      out_img = hsv_image;
+    }
+    if (param.convert_to_lab()) {
+      cv::Mat lab_image;
+      out_img.convertTo(lab_image, CV_32F);
+      lab_image *= 1.0 / 255;
+      cv::cvtColor(lab_image, out_img,CV_BGR2Lab);
+    }
     return  out_img;
   }
 }  // namespace caffe
