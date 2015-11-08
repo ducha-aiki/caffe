@@ -442,6 +442,211 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
     }
 }
 
+
+template<typename Dtype>
+void DataTransformer<Dtype>::TransformWithBBox(const cv::Mat& cv_img,
+                                               Blob<Dtype>* transformed_blob, int &x_min,
+                                                int &y_min,  int &x_max,  int &y_max) {
+    const int crop_size = param_.crop_size();
+    const int img_channels = cv_img.channels();
+    int img_height = cv_img.rows;
+    int img_width = cv_img.cols;
+
+    // Check dimensions.
+    const int channels = transformed_blob->channels();
+    const int height = transformed_blob->height();
+    const int width = transformed_blob->width();
+    const int num = transformed_blob->num();
+
+    const int old_x_min = x_min;
+    const int old_x_max = x_max;
+    const int old_y_min = y_min;
+    const int old_y_max = y_max;
+
+
+    CHECK_EQ(channels, img_channels);
+    CHECK_GE(num, 1);
+
+    CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
+
+    const Dtype scale = param_.scale();
+    const bool do_mirror = param_.mirror() && Rand(2);
+    const bool do_vert_mirror = param_.vertical_mirror() && Rand(2);
+    const bool has_mean_file = param_.has_mean_file();
+    const bool has_mean_values = mean_values_.size() > 0;
+    const bool random_crop_on_test = param_.random_crop_on_test();
+    const int rotation_count = (param_.random_90_deg_rot()) ? Rand(4) : 0;
+    cv::Mat cv_resized_image, cv_noised_image, cv_cropped_image;
+
+    const int num_resize_policies = param_.resize_param_size();
+    const int num_noise_policies = param_.noise_param_size();
+
+    if (num_resize_policies > 0) {
+        std::vector<double> probabilities;
+        double prob_sum = 0;
+        for (int i = 0; i < num_resize_policies; i++) {
+            const double prob = param_.resize_param(i).prob();
+            CHECK_GE(prob, 0);
+            CHECK_LE(prob, 1);
+            prob_sum+=prob;
+            probabilities.push_back(prob);
+        }
+        CHECK_NEAR(prob_sum, 1.0, prob_eps);
+        int policy_num = roll_weighted_die(probabilities);
+        cv_resized_image = ApplyResize(cv_img, param_.resize_param(policy_num));
+        UpdateBBoxByResizePolicy(cv_img.cols,cv_img.rows,
+                                 param_.resize_param(policy_num),
+                                 x_min, y_min,
+                                 x_max, y_max);
+
+    } else {
+        cv_resized_image = cv_img;
+    }
+
+    if (num_noise_policies > 0) {
+        std::vector<double> probabilities;
+        double prob_sum = 0;
+        for (unsigned int i = 0; i < num_noise_policies; i++) {
+            const double prob = param_.noise_param(i).prob();
+            CHECK_GE(prob, 0);
+            CHECK_LE(prob, 1);
+            prob_sum+=prob;
+            probabilities.push_back(prob);
+        }
+        CHECK_NEAR(prob_sum, 1.0, prob_eps);
+        int policy_num = roll_weighted_die(probabilities);
+        cv_noised_image = ApplyNoise(cv_resized_image,
+                                     param_.noise_param(policy_num));
+
+    } else {
+        cv_noised_image = cv_resized_image;
+    }
+
+    CHECK_GT(img_channels, 0);
+
+    int crop_h = param_.crop_h();
+    int crop_w = param_.crop_w();
+
+    if (crop_size) {
+        crop_h = crop_size;
+        crop_w = crop_size;
+    }
+
+    CHECK_GE(cv_noised_image.rows, crop_h);
+    CHECK_GE(cv_noised_image.cols, crop_w);
+    img_height = cv_noised_image.rows;
+    img_width = cv_noised_image.cols;
+
+    int h_off = 0;
+    int w_off = 0;
+
+    Dtype* mean = NULL;
+    if (has_mean_file) {
+        CHECK_EQ(img_channels, data_mean_.channels());
+        CHECK_EQ(img_height, data_mean_.height());
+        CHECK_EQ(img_width, data_mean_.width());
+        mean = data_mean_.mutable_cpu_data();
+    }
+    if (has_mean_values) {
+        CHECK(mean_values_.size() == 1 || mean_values_.size() == img_channels) <<
+                                                                                  "Specify either 1 mean_value or as many as channels: " << img_channels;
+        if (img_channels > 1 && mean_values_.size() == 1) {
+            // Replicate the mean_value for simplicity
+            for (int c = 1; c < img_channels; ++c) {
+                mean_values_.push_back(mean_values_[0]);
+            }
+        }
+    }
+
+   // cv::Mat cv_cropped_img = cv_img;
+
+    if ( (crop_h > 0) && (crop_w > 0)) {
+        CHECK_EQ(crop_h, height);
+        CHECK_EQ(crop_w, width);
+        // We only do random crop when we do training.
+        if (phase_ == TRAIN ||
+                ((phase_ == TEST) && (random_crop_on_test ))) {
+            h_off = Rand(img_height - crop_h + 1);
+            w_off = Rand(img_width - crop_w + 1);
+
+        } else {
+            h_off = (img_height - crop_h) / 2;
+            w_off = (img_width - crop_w) / 2;
+        }
+        x_min = std::max(0,x_min-w_off);
+        x_max = std::min(x_max-w_off, w_off + crop_w);
+        y_min = std::max(0,y_min-h_off);
+        y_max = std::min(y_max-h_off, h_off + crop_h);
+        cv::Rect roi(w_off, h_off, crop_w, crop_h);
+        cv_cropped_image = cv_noised_image(roi);
+    } else {
+        cv_cropped_image = cv_noised_image;
+    }
+
+    CHECK_EQ(cv_cropped_image.rows, height);
+    CHECK_EQ(cv_cropped_image.cols, width);
+    if (has_mean_file) {
+        CHECK_EQ(cv_cropped_image.rows, data_mean_.height());
+        CHECK_EQ(cv_cropped_image.cols, data_mean_.width());
+    }
+    CHECK(cv_cropped_image.data);
+
+    Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+    int top_index;
+    for (int h = 0; h < height; ++h) {
+        const uchar* ptr = cv_cropped_image.ptr<uchar>(h);
+        int img_index = 0;
+        int h_idx = h;
+        if (do_vert_mirror) {
+            h_idx = height - 1 - h;
+            int y_min_temp = y_min;
+            y_min = crop_h - y_max;
+            y_max = crop_h - y_min_temp;
+
+        }
+        for (int w = 0; w < width; ++w) {
+            int w_idx = w;
+            if (do_mirror) {
+                w_idx = (width - 1 - w);
+                int x_min_temp = x_min;
+                x_min = crop_w - x_max;
+                x_max = crop_w - x_min_temp;
+            }
+            int h_idx_real = h_idx;
+            int w_idx_real = w_idx;
+            if (rotation_count == 1) {
+                int temp = w_idx_real;
+                w_idx_real = height - 1 - h_idx_real;
+                h_idx_real = temp;
+            } else if (rotation_count == 2) {
+                w_idx_real = width - 1 - w_idx_real;
+                h_idx_real = height - 1 - h_idx_real;
+            } else if (rotation_count == 3) {
+                int temp = h_idx_real;
+                h_idx_real = width - 1 - w_idx_real;
+                w_idx_real = temp;
+            }
+            for (int c = 0; c < img_channels; ++c) {
+                top_index = (c * height + h_idx_real) * width + w_idx_real;
+                Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
+                if (has_mean_file) {
+                    int mean_index = (c * img_height + h_off + h_idx_real) * img_width
+                            + w_off + w_idx_real;
+                    transformed_data[top_index] =
+                            (pixel - mean[mean_index]) * scale;
+                } else {
+                    if (has_mean_values) {
+                        transformed_data[top_index] =
+                                (pixel - mean_values_[c]) * scale;
+                    } else {
+                        transformed_data[top_index] = pixel * scale;
+                    }
+                }
+            }
+        }
+    }
+}
+
 #endif  // USE_OPENCV
 
 template<typename Dtype>

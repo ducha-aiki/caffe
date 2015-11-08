@@ -113,6 +113,11 @@ namespace caffe {
   void CenterObjectAndFillBg(const cv::Mat & in_img,
       cv::Mat & out_img, const bool fill_bg = false);
 
+  void UpdateBBoxByResizePolicy(const int old_width, const int old_height,
+                                const ResizeParameter param,
+                                int &x_min, int &y_min,
+                                int &x_max,  int &y_max);
+
   cv::Mat AspectKeepingResizeAndPad(const cv::Mat &in_img,
       const int new_width, const int new_height,
       const int pad_type = cv::BORDER_CONSTANT,

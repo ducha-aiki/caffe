@@ -155,6 +155,83 @@ namespace caffe {
     }
   }
 
+  void UpdateBBoxByResizePolicy(const int old_width, const int old_height,
+                                const ResizeParameter param,
+                                int &x_min, int &y_min,
+                                int &x_max,  int &y_max) {
+      int new_height = param.height();
+      int new_width = param.width();
+
+      switch (param.resize_mode()) {
+        case ResizeParameter_Resize_mode_WARP:
+        {
+          x_min = std::max(0,(int)floor((double) x_min * (double)new_width / (double)old_width));
+          x_max = std::min(new_width,(int)floor((double) x_max * (double)new_width / (double)old_width));
+
+          y_min = std::max(0,(int)floor((double) y_min * (double)new_height / (double)old_height));
+          y_max = std::min(new_height,(int)floor((double) y_max * (double)new_height / (double)old_height));
+
+          break;
+        }
+        case ResizeParameter_Resize_mode_FIT_LARGE_SIZE_AND_PAD:
+        {
+          double orig_aspect = static_cast<double> (old_width) /
+              static_cast<double> (old_height);
+
+          double new_aspect = static_cast<double> (new_width) /
+              static_cast<double> (new_height);
+
+          if (orig_aspect > new_aspect) {
+            int padding = floor((new_height - (double)new_width/orig_aspect) / 2.0);
+
+            x_min = std::max(0,(int)floor((double) x_min * (double)new_width / (double)old_width));
+            x_max = std::min(new_width,(int)floor((double) x_max * (double)new_width / (double)old_width));
+
+            y_min = padding + std::max(0,(int)floor((double) y_min * (double)(new_height - 2*padding)
+                                               / (double)old_height));
+            y_max = padding + std::min(new_height,(int)floor((double) y_max * (double)(new_height- 2*padding)
+                                                        / (double)old_height));
+
+
+          } else {
+            int padding = floor(new_width - floor(orig_aspect*new_height) / 2.0);
+
+            x_min = padding + std::max(0,(int)floor((double) x_min * (double)(new_width - 2*padding )
+                                               / (double)old_width));
+            x_max = padding + std::min(new_width,(int)floor((double) x_max * (double)(new_width - 2*padding)
+                                                       / (double)old_width));
+
+            y_min = std::max(0,(int)floor((double) y_min * (double)new_height / (double)old_height));
+            y_max = std::min(new_height,(int)floor((double) y_max * (double)new_height / (double)old_height));
+
+          }
+          break;
+        }
+        case ResizeParameter_Resize_mode_FIT_SMALL_SIZE:
+        {
+          double orig_aspect = static_cast<double> (old_width) /
+              static_cast<double> (old_height);
+
+          double new_aspect = static_cast<double> (new_width) /
+              static_cast<double> (new_height);
+          if (orig_aspect < new_aspect) {
+              new_height = floor((double) new_width/orig_aspect);
+
+          } else {
+              new_width = orig_aspect*new_height;
+          }
+          x_min = std::max(0,(int)floor((double) x_min * (double)new_width / (double)old_width));
+          x_max = std::min(new_width,(int)floor((double) x_max * (double)new_width / (double)old_width));
+
+          y_min = std::max(0,(int)floor((double) y_min * (double)new_height / (double)old_height));
+          y_max = std::min(new_height,(int)floor((double) y_max * (double)new_height / (double)old_height));
+
+          break;
+        }
+      }
+
+  }
+
   cv::Mat ApplyResize(const cv::Mat &in_img, const ResizeParameter param) {
     cv::Mat out_img;
 
