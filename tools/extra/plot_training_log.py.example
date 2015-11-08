@@ -123,7 +123,8 @@ def plot_chart(chart_type, path_to_png, path_to_log_list):
         data = load_data(data_file, x, y)
         ## TODO: more systematic color cycle for lines
         #color = [random.random(), random.random(), random.random()]
-#        color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
+   #     color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
+        #color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
         color = list ( colorsys.hsv_to_rgb(hue,1.0,1.0)   )
         if path_to_log == baseline_name :
             color = [0.0,0.0,0.0]
