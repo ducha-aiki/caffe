@@ -184,10 +184,16 @@ ifeq ($(USE_LMDB), 1)
 	LIBRARIES += lmdb
 endif
 ifeq ($(USE_OPENCV), 1)
-	LIBRARIES += opencv_core opencv_highgui opencv_imgproc
-ifeq ($(OPENCV3), 1)
-LIBRARIES += opencv_imgcodecs
-endif
+	LIBRARIES += opencv_core opencv_highgui opencv_imgproc 
+
+	ifeq ($(OPENCV_VERSION), 3)
+		LIBRARIES += opencv_imgcodecs
+	endif
+	ifeq ($(OPENCV3), 1)
+		LIBRARIES += opencv_imgcodecs
+	endif
+ 
+		
 endif
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall -Wno-sign-compare
@@ -316,6 +322,9 @@ ifeq ($(USE_LEVELDB), 1)
 endif
 ifeq ($(USE_LMDB), 1)
 	COMMON_FLAGS += -DUSE_LMDB
+ifeq ($(ALLOW_LMDB_NOLOCK), 1)
+	COMMON_FLAGS += -DALLOW_LMDB_NOLOCK
+endif
 endif
 
 # CPU-only configuration
