@@ -107,6 +107,14 @@ def get_legend_loc(chart_type):
     return loc
 
 def plot_chart(chart_type, path_to_png, path_to_log_list):
+    baseline_name  = ""
+    num = len(path_to_log_list)
+    for path_to_log in path_to_log_list:
+        if "baseline" in path_to_log:
+            baseline_name = path_to_log
+            num = num - 1
+            break
+    hue = 0.0;
     for path_to_log in path_to_log_list:
         os.system('%s %s' % (get_log_parsing_script(), path_to_log))
         data_file = get_data_file(chart_type, path_to_log)
@@ -115,7 +123,14 @@ def plot_chart(chart_type, path_to_png, path_to_log_list):
         data = load_data(data_file, x, y)
         ## TODO: more systematic color cycle for lines
         #color = [random.random(), random.random(), random.random()]
-        color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
+   #     color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
+        #color = list ( colorsys.hsv_to_rgb(random.random(),1.0,1.0)   )
+        color = list ( colorsys.hsv_to_rgb(hue,1.0,1.0)   )
+        if path_to_log == baseline_name :
+            color = [0.0,0.0,0.0]
+        else:
+            hue += 1.0/num
+            
         label = get_data_label(path_to_log)
         linewidth = 0.75
         ## If there too many datapoints, do not use marker.
