@@ -15,6 +15,7 @@ exit
 fi
 LOG=`basename $1`
 sed -n '/Iteration .* Testing net/,/Iteration *. loss/p' $1 > aux.txt
+sed -i '/MultiStep Status/d' aux.txt 
 sed -i '/Waiting for data/d' aux.txt
 sed -i '/prefetch queue empty/d' aux.txt
 sed -i '/Iteration .* loss/d' aux.txt
