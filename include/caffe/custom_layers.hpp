@@ -417,7 +417,7 @@ namespace caffe {
       virtual inline bool AllowForceBackward(const int bottom_index) const {
         return true;
       }
-
+      virtual inline int ExactNumBottomBlobs() const { return 3; }
      protected:
       /// @copydoc EuclideanLossWithIndexLayer
       virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,

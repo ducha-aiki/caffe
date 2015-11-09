@@ -56,7 +56,6 @@ void ImageLocDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom
     ShuffleImages();
   }
   LOG(INFO) << "A total of " << lines_.size() << " images.";
-
   lines_id_ = 0;
   // Check if we would need to randomly skip a few data points
   if (this->layer_param_.image_data_param().rand_skip()) {
@@ -86,7 +85,9 @@ void ImageLocDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom
       << top[0]->channels() << "," << top[0]->height() << ","
       << top[0]->width();
   // label
-  vector<int> label_shape(1, batch_size);
+  vector<int> label_shape(4, 1);
+  label_shape[0] = batch_size;
+  label_shape[1] = 5; // label xmin ymin xmax ymax
   top[1]->Reshape(label_shape);
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
     this->prefetch_[i].label_.Reshape(label_shape);
@@ -111,6 +112,8 @@ void ImageLocDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CHECK(batch->data_.count());
   CHECK(this->transformed_data_.count());
   ImageDataParameter image_data_param = this->layer_param_.image_data_param();
+  ImageDataLocParameter image_loc_data_param = this->layer_param_.image_loc_data_param();
+
   const int batch_size = image_data_param.batch_size();
   const int new_height = image_data_param.new_height();
   const int new_width = image_data_param.new_width();
@@ -128,7 +131,8 @@ void ImageLocDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   this->transformed_data_.Reshape(top_shape);
   // Reshape batch according to the batch_size.
   top_shape[0] = batch_size;
-  batch->data_.Reshape(batch_size, 5, 1, 1);
+  batch->data_.Reshape(top_shape);
+  batch->label_.Reshape(batch_size, 5, 1, 1);
 
   Dtype* prefetch_data = batch->data_.mutable_cpu_data();
   Dtype* prefetch_label = batch->label_.mutable_cpu_data();
@@ -156,11 +160,31 @@ void ImageLocDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->data_transformer_->TransformWithBBox(cv_img, &(this->transformed_data_),
                                                x_min, y_min,
                                                x_max, y_max);
-    prefetch_label[item_id*5+1] = x_min + (x_max - x_min) / 2.0;
-    prefetch_label[item_id*5+2] = y_min + (y_max - y_min) / 2.0;
-    prefetch_label[item_id*5+3] = (x_max - x_min) / 2.0;
-    prefetch_label[item_id*5+4] = (y_max - y_min) / 2.0;
-
+    if (image_loc_data_param.output_center_and_radius()) {
+      if (image_loc_data_param.normalize_by_image_size()) {
+        prefetch_label[item_id*5+1] = (Dtype)(x_min + (x_max - x_min) / 2.0) / this->transformed_data_.width() ;
+        prefetch_label[item_id*5+2] = (Dtype)(y_min + (y_max - y_min) / 2.0) / this->transformed_data_.height() ;
+        prefetch_label[item_id*5+3] = (Dtype)((x_max - x_min) / 2.0) / this->transformed_data_.width() ;
+        prefetch_label[item_id*5+4] = (Dtype)((y_max - y_min) / 2.0) / this->transformed_data_.height() ;
+      } else {
+        prefetch_label[item_id*5+1] = x_min + (x_max - x_min) / 2.0;
+        prefetch_label[item_id*5+2] = y_min + (y_max - y_min) / 2.0;
+        prefetch_label[item_id*5+3] = (x_max - x_min) / 2.0;
+        prefetch_label[item_id*5+4] = (y_max - y_min) / 2.0;
+      }
+    } else {
+      if (image_loc_data_param.output_center_and_radius()) {
+        prefetch_label[item_id*5+1] = (Dtype)x_min / this->transformed_data_.width() ;
+        prefetch_label[item_id*5+2] = (Dtype)y_min / this->transformed_data_.height() ;
+        prefetch_label[item_id*5+3] = (Dtype)x_max / this->transformed_data_.width() ;
+        prefetch_label[item_id*5+4] = (Dtype)y_max / this->transformed_data_.height() ;
+      } else {
+        prefetch_label[item_id*5+1] = x_min ;
+        prefetch_label[item_id*5+2] = y_min ;
+        prefetch_label[item_id*5+3] = x_max ;
+        prefetch_label[item_id*5+4] = y_max ;
+      }
+    }
 
     trans_time += timer.MicroSeconds();
 
