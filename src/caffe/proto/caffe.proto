@@ -370,6 +370,7 @@ message LayerParameter {
   optional HDF5OutputParameter hdf5_output_param = 113;
   optional HingeLossParameter hinge_loss_param = 114;
   optional ImageDataParameter image_data_param = 115;
+  optional ImageDataLocParameter image_loc_data_param = 401;
   optional InfogainLossParameter infogain_loss_param = 116;
   optional InnerProductParameter inner_product_param = 117;
   optional LogParameter log_param = 134;
@@ -398,6 +399,11 @@ message LayerParameter {
   optional RReLUParameter rrelu_param = 203;
   optional TripletLossParameter triplet_loss_param = 205;
   optional ROIPoolingParameter roi_pooling_param = 206;
+}
+
+message ImageDataLocParameter {
+  optional bool normalize_by_image_size = 1 [default = true];
+  optional bool output_center_and_radius = 2 [default = true];
 }
 
 message RReLUParameter {
