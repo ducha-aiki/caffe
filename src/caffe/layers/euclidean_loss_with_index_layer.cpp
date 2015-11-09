@@ -52,9 +52,9 @@ void EuclideanLossWithIndexLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>
     const Dtype* diff1 = diff_.cpu_data();
     int num = bottom[0]->count();
     caffe_set(bottom[2]->count(), Dtype(0), bottom_estimate_diff);
-    const Dtype alpha = top[0]->cpu_diff()[0] / num;
+    const Dtype alpha = -top[0]->cpu_diff()[0] / num;
       for (int i = 0; i < num; ++i) {
-          bottom_estimate_diff[i*num + (int)index[i]] = alpha *diff1[i];
+          bottom_estimate_diff[i*num + (int)index[i]] += alpha *diff1[i];
       }
   }
 }
