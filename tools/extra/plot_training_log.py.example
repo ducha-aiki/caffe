@@ -131,10 +131,10 @@ def plot_chart(chart_type, path_to_png, path_to_log_list):
         else:
             hue += 1.0/num
         label = get_data_label(path_to_log)
-        linewidth = 0.75
+        linewidth = 1.75
         ## If there too many datapoints, do not use marker.
-##        use_marker = False
-        use_marker = True
+        use_marker = False
+#        use_marker = True
         if not use_marker:
             plt.plot(data[0], data[1], label = label, color = color,
                      linewidth = linewidth)

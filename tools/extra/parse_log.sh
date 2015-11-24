@@ -35,7 +35,7 @@ $DIR/extract_seconds.py aux3.txt aux4.txt
 # Generating
 echo '#Iters Seconds TestAccuracy TestLoss'> $LOG.test
 paste aux0.txt aux4.txt aux1.txt aux2.txt | column -t >> $LOG.test
-#rm aux.txt aux0.txt aux1.txt aux2.txt aux3.txt aux4.txt
+rm aux.txt aux0.txt aux1.txt aux2.txt aux3.txt aux4.txt
 
 # For extraction of time since this line contains the start time
 grep '] Solving ' $1 > sec_aux.txt
