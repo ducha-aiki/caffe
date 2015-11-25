@@ -381,7 +381,15 @@ INCLUDE_DIRS += $(BLAS_INCLUDE)
 LIBRARY_DIRS += $(BLAS_LIB)
 
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
-
++USE_OPENMP ?= 0
+ifeq ($(USE_OPENMP), 1)
+        CXXFLAGS += -fopenmp
+        LINKFLAGS += -fopenmp
+        ifeq ($(BLAS), mkl)
+                LIBRARIES += iomp5
+                LIBRARY_DIRS += $(INTEL_OMP_DIR)/compiler/lib/intel64
+        endif
+endif
 # Automatic dependency generation (nvcc is handled separately)
 CXXFLAGS += -MMD -MP
 
