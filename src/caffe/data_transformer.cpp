@@ -385,8 +385,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
         cv_cropped_image = cv_noised_image;
     }
 
-    CHECK_EQ(cv_cropped_image.rows, height);
-    CHECK_EQ(cv_cropped_image.cols, width);
+  //  CHECK_EQ(cv_cropped_image.rows, height);
+  //  CHECK_EQ(cv_cropped_image.cols, width);
     if (has_mean_file) {
         CHECK_EQ(cv_cropped_image.rows, data_mean_.height());
         CHECK_EQ(cv_cropped_image.cols, data_mean_.width());

@@ -363,6 +363,7 @@ message LayerParameter {
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
+
   optional EmbedParameter embed_param = 137;
   optional ExpParameter exp_param = 111;
   optional FlattenParameter flatten_param = 135;
@@ -400,6 +401,18 @@ message LayerParameter {
   optional TripletLossParameter triplet_loss_param = 205;
   optional ROIPoolingParameter roi_pooling_param = 206;
   optional ELUParameter elu_param = 210;
+  optional EltwiseAffineParameter eltwise_affine_param = 220;
+}
+
+message EltwiseAffineParameter {
+
+  // Initial value of a_i. Default is a_i=1.0 for all i.
+  optional FillerParameter slope_filler = 1;
+
+  optional FillerParameter bias_filler = 2;
+
+  // Whether or not slope paramters are shared across channels.
+  optional bool channel_shared = 3 [default = false];
 }
 
 message ImageDataLocParameter {

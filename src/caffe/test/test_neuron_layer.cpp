@@ -9,7 +9,7 @@
 #include "caffe/common_layers.hpp"
 #include "caffe/filler.hpp"
 #include "caffe/neuron_layers.hpp"
-
+#include "caffe/custom_layers.hpp"
 #include "caffe/test/test_caffe_main.hpp"
 #include "caffe/test/test_gradient_check_util.hpp"
 
@@ -118,6 +118,27 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     }
   }
 
+     void TestEltwiseAffine(EltwiseAffineLayer<Dtype> *layer) {
+           layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+            // Now, check values
+            const Dtype* bottom_data = this->blob_bottom_->cpu_data();
+            const Dtype* top_data = this->blob_top_->cpu_data();
+            const Dtype* slope_data = layer->blobs()[0]->cpu_data();
+            const Dtype* bias_data = layer->blobs()[1]->cpu_data();
+            const Dtype kDelta = 2e-5;
+            int hw = this->blob_bottom_->height() * this->blob_bottom_->width();
+            int channels = this->blob_bottom_->channels();
+            bool channel_shared =
+                layer->layer_param().eltwise_affine_param().channel_shared();
+            for (int i = 0; i < this->blob_bottom_->count(); ++i) {
+                  int c = channel_shared ? 0 : (i / hw) % channels;
+                  EXPECT_NEAR(top_data[i],
+                               bottom_data[i]* slope_data[c] + bias_data[c], kDelta);
+                }
+            
+     }
+  
+              //////////////          
   void LogBottomInit() {
     FillerParameter filler_param;
     GaussianFiller<Dtype> filler(filler_param);
@@ -187,6 +208,51 @@ TYPED_TEST(NeuronLayerTest, TestAbsGradient) {
       this->blob_top_vec_);
 }
 
+TYPED_TEST(NeuronLayerTest, TestEltwiseAffineForward) {
+    typedef typename TypeParam::Dtype Dtype;
+    LayerParameter layer_param;
+    EltwiseAffineLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    FillerParameter filler_param;
+    GaussianFiller<Dtype> filler(filler_param);
+    filler.Fill(layer.blobs()[0].get());
+    filler.Fill(layer.blobs()[1].get());
+    this->TestEltwiseAffine(&layer);
+}
+
+TYPED_TEST(NeuronLayerTest, TestEltwiseAffineForwardChannelShared) {
+    typedef typename TypeParam::Dtype Dtype;
+    LayerParameter layer_param;
+    layer_param.mutable_eltwise_affine_param()->set_channel_shared(true);
+    EltwiseAffineLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    this->TestEltwiseAffine(&layer);
+}
+
+TYPED_TEST(NeuronLayerTest, TestEltwiseAffineGradient) {
+    typedef typename TypeParam::Dtype Dtype;
+    LayerParameter layer_param;
+    layer_param.mutable_eltwise_affine_param()->set_channel_shared(false);
+    EltwiseAffineLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    FillerParameter filler_param;
+    GaussianFiller<Dtype> filler(filler_param);
+    filler.Fill(layer.blobs()[0].get());
+    GradientChecker<Dtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+    this->blob_top_vec_);
+}
+
+TYPED_TEST(NeuronLayerTest, TestEltwiseAffineGradientChannelShared) {
+    typedef typename TypeParam::Dtype Dtype;
+    LayerParameter layer_param;
+    layer_param.mutable_eltwise_affine_param()->set_channel_shared(true);
+    EltwiseAffineLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    GradientChecker<Dtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+    this->blob_top_vec_);
+}
 TYPED_TEST(NeuronLayerTest, TestReLU) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
